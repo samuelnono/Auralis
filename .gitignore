@@ -1,0 +1,12 @@
+# data
+data/raw/
+data/processed/
+data/models/
+
+# environments
+.venv/
+__pycache__/
+*.pyc
+
+# notebooks
+.ipynb_checkpoints/
