@@ -18,3 +18,9 @@ src/auralis/
 audio/ # feature extraction
 emotion/ # emotion mapping/model
 recommend/ # recommendation logic
+
+## Current Status
+- Audio loading ✅
+- MFCC feature extraction ✅
+- Emotion mapping ⏳
+- Recommendation logic ⏳
