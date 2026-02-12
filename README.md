@@ -1,11 +1,11 @@
 Roadmap
  Setup ✅
-
 Git + GitHub repository
 
 Python virtual environment
 
 Dependency management (requirements.txt)
+
 
 Phase 1 — Core Audio Pipeline ✅
 
@@ -17,6 +17,7 @@ Feature aggregation (mean + standard deviation)
 
 Cosine similarity comparison
 
+
 Phase 2 — Emotion Mapping (Interpretable) ✅
 
 Rule-based emotion inference from MFCC statistics
@@ -24,6 +25,7 @@ Rule-based emotion inference from MFCC statistics
 Multi-emotion scoring (calm, energetic, happy, sad)
 
 Transparent score output
+
 
 Phase 3 — Interactive Frontend ✅
 
@@ -37,6 +39,7 @@ Similarity analysis
 
 CSV experiment logging
 
+
 Phase 4 — Ongoing Development ⏳
 
 Expanded spectral features
@@ -47,6 +50,8 @@ Scalable recommendation engine
 
 Research evaluation and publication
 
+
+
 📊 Current System Capabilities
 
 ✔ Audio feature extraction (MFCC-based)
@@ -55,6 +60,8 @@ Research evaluation and publication
 ✔ Cosine similarity comparison
 ✔ Experiment logging (CSV export)
 ✔ End-to-end Streamlit demo
+
+
 
 🧠 System Architecture
 
