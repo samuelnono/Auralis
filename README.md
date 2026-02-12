@@ -1,5 +1,6 @@
 Roadmap
- Setup ✅
+
+Setup ✅
 Git + GitHub repository
 
 Python virtual environment
@@ -52,7 +53,7 @@ Research evaluation and publication
 
 
 
-📊 Current System Capabilities
+ Current System Capabilities
 
 ✔ Audio feature extraction (MFCC-based)
 ✔ Statistical feature aggregation
@@ -63,7 +64,7 @@ Research evaluation and publication
 
 
 
-🧠 System Architecture
+ System Architecture
 
 The system follows a modular, research-oriented pipeline.
 
