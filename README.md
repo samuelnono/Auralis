@@ -1,102 +1,141 @@
-Roadmap
+# 🎵 Auralis  
+**Emotion-Aware Music Recommendation System | Feature Engineering | Applied Machine Learning**
 
-Setup ✅
-Git + GitHub repository
+---
 
-Python virtual environment
+## 🌍 Project Overview
 
-Dependency management (requirements.txt)
+Auralis is a frequency- and emotion-aware music recommendation system designed to bridge signal processing and human-centered AI.
 
+Unlike traditional recommender systems that rely only on user behavior, Auralis analyzes:
 
-Phase 1 — Core Audio Pipeline ✅
+- Audio frequency features (MFCCs)
+- Acoustic characteristics
+- Emotion mapping (valence/arousal modeling)
+- Similarity-based recommendation logic
 
-Audio loading (WAV / MP3 supported)
+The goal is to simulate an interpretable, emotionally intelligent music recommendation architecture.
 
-MFCC feature extraction
+---
 
-Feature aggregation (mean + standard deviation)
+## 🏗 System Architecture
 
-Cosine similarity comparison
+### Input Layer
+- Audio file ingestion
+- Feature extraction pipeline
 
+### Feature Engineering Layer
+- Mel-Frequency Cepstral Coefficients (MFCCs)
+- Spectral features
+- Temporal acoustic statistics
 
-Phase 2 — Emotion Mapping (Interpretable) ✅
+### Emotion Mapping Layer
+- Rule-based valence/arousal mapping
+- Emotion classification logic
+- Interpretable scoring system
 
-Rule-based emotion inference from MFCC statistics
+### Recommendation Engine
+- Cosine similarity scoring
+- Emotion-distance ranking
+- Frequency-aware comparison
 
-Multi-emotion scoring (calm, energetic, happy, sad)
+### Application Layer
+- Streamlit interactive UI
+- Real-time audio comparison
+- Emotion visualization
 
-Transparent score output
+---
 
+## 🔬 Core Engineering Components
 
-Phase 3 — Interactive Frontend ✅
+### 1️⃣ Feature Extraction
 
-Streamlit web interface
+Audio is transformed into structured numerical representations using:
 
-Upload one or two audio files
+- MFCC extraction
+- Mean & variance aggregation
+- Feature normalization
 
-Emotion prediction display
+This allows signal-level comparison across tracks.
 
-Similarity analysis
+---
 
-CSV experiment logging
+### 2️⃣ Emotion Modeling
 
+Emotion is predicted using:
 
-Phase 4 — Ongoing Development ⏳
+- Calm score
+- Energetic score
+- Happy score
+- Sad score
 
-Expanded spectral features
+These scores simulate valence-arousal space modeling.
 
-Improved emotion heuristics
+The system prioritizes interpretability over black-box complexity.
 
-Scalable recommendation engine
+---
 
-Research evaluation and publication
+### 3️⃣ Similarity-Based Recommendation
 
+Recommendations are generated through:
 
+- Cosine similarity
+- Distance ranking
+- Emotion alignment filtering
 
- Current System Capabilities
+This avoids reliance on behavioral tracking and focuses on intrinsic audio structure.
 
-✔ Audio feature extraction (MFCC-based)
-✔ Statistical feature aggregation
-✔ Interpretable emotion prediction
-✔ Cosine similarity comparison
-✔ Experiment logging (CSV export)
-✔ End-to-end Streamlit demo
+---
 
+## ⚡ Performance Considerations
 
+Optimization focused on:
 
- System Architecture
+- Lightweight feature extraction
+- Efficient vector comparison
+- Scalable indexing structure
+- Modular architecture for future expansion
 
-The system follows a modular, research-oriented pipeline.
+Designed to evolve toward:
 
-User Upload (WAV / MP3)
-        │
-        ▼
-Audio Loader (librosa)
-        │
-        ▼
-MFCC Extraction
-        │
-        ▼
-Feature Aggregation
-(mean + std statistics)
-        │
-        ├──────────────► Cosine Similarity Module
-        │
-        ▼
-Emotion Mapping Engine
-(rule-based, interpretable)
-        │
-        ▼
-Streamlit Frontend Output
-- Emotion scores
-- Predicted emotion
-- Similarity score
-- CSV logging
+- Larger dataset indexing
+- Hybrid recommendation logic
+- Real-time similarity lookup
 
+---
 
-Each component is isolated and replaceable.
-The feature extraction layer can later be swapped for deep embeddings.
-The emotion mapping module can be replaced with a learned classifier.
-The similarity engine can scale to large music databases.
+## 🧠 Engineering Focus
 
-The design is intentional: clarity first, complexity later.
+### Applied Machine Learning
+- Audio signal feature engineering
+- Emotion modeling
+- Similarity metrics
+
+### Human-Centered AI
+- Interpretable scoring
+- Emotion-driven recommendation logic
+- Psychological alignment of system outputs
+
+### Systems Design
+- Modular pipeline architecture
+- Expandable model layers
+- Clean separation of extraction, modeling, and UI
+
+---
+
+## 🚀 Future Enhancements
+
+- Train supervised emotion classifier
+- Add deep audio embeddings
+- Introduce playlist generation logic
+- Integrate streaming API
+- Deploy scalable vector search backend
+
+---
+
+## 👤 Author
+
+Samuel Nono  
+M.S. Data Science  
+
+Applied AI | Emotion Modeling | Intelligent Systems
