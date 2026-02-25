@@ -1,141 +1,210 @@
 # 🎵 Auralis  
-**Emotion-Aware Music Recommendation System | Feature Engineering | Applied Machine Learning**
+**Frequency- and Emotion-Aware Music Analysis & Hybrid Recommendation Framework**
+
+Emotion Modeling | Acoustic Feature Engineering | Applied Machine Learning | Human-Centered AI
 
 ---
 
 ## 🌍 Project Overview
 
-Auralis is a frequency- and emotion-aware music recommendation system designed to bridge signal processing and human-centered AI.
+Auralis is a frequency- and emotion-aware music analysis and recommendation framework designed to bridge acoustic signal processing with interpretable artificial intelligence.
 
-Unlike traditional recommender systems that rely only on user behavior, Auralis analyzes:
+Unlike traditional recommender systems that primarily rely on user behavior tracking and collaborative filtering, Auralis focuses on intrinsic audio structure. The system analyzes spectral and timbral characteristics of music through Mel-Frequency Cepstral Coefficients (MFCCs), maps those acoustic representations to interpretable emotional dimensions, and performs similarity-based retrieval within feature space.
 
-- Audio frequency features (MFCCs)
-- Acoustic characteristics
-- Emotion mapping (valence/arousal modeling)
-- Similarity-based recommendation logic
+The long-term vision of Auralis is a hybrid system that combines:
 
-The goal is to simulate an interpretable, emotionally intelligent music recommendation architecture.
+- Frequency-driven emotion modeling  
+- User preference pattern learning  
+- Emotion-aligned recommendation logic  
+- Conversational interaction through NLP and LLM integration  
+
+The current version represents the foundational research and architectural layer of that broader vision.
+
+This repository corresponds to:  
+**Release v1.0-cadscom-draft**
 
 ---
 
 ## 🏗 System Architecture
 
-### Input Layer
-- Audio file ingestion
-- Feature extraction pipeline
+Auralis follows a modular four-layer architecture designed for extensibility and interpretability.
 
-### Feature Engineering Layer
-- Mel-Frequency Cepstral Coefficients (MFCCs)
-- Spectral features
-- Temporal acoustic statistics
+### 1️⃣ Acoustic Feature Extraction
 
-### Emotion Mapping Layer
-- Rule-based valence/arousal mapping
-- Emotion classification logic
-- Interpretable scoring system
+Audio signals are transformed into structured numerical representations using:
 
-### Recommendation Engine
-- Cosine similarity scoring
-- Emotion-distance ranking
-- Frequency-aware comparison
+- 13 MFCC coefficients per time frame  
+- Temporal aggregation via mean and standard deviation  
+- 26-dimensional fixed-length feature vectors (13 means + 13 standard deviations)
 
-### Application Layer
-- Streamlit interactive UI
-- Real-time audio comparison
-- Emotion visualization
+This ensures consistent comparison across tracks of varying duration while preserving spectral characteristics related to timbre and energy distribution.
 
 ---
 
-## 🔬 Core Engineering Components
+### 2️⃣ Emotion Modeling Layer
 
-### 1️⃣ Feature Extraction
+Emotion representation is aligned conceptually with the valence-arousal framework.  
+Rather than using supervised classification in its current stage, Auralis applies an interpretable rule-based mapping from aggregated MFCC statistics to four emotional indicators:
 
-Audio is transformed into structured numerical representations using:
+- Calm  
+- Energetic  
+- Happy  
+- Sad  
 
-- MFCC extraction
-- Mean & variance aggregation
-- Feature normalization
-
-This allows signal-level comparison across tracks.
-
----
-
-### 2️⃣ Emotion Modeling
-
-Emotion is predicted using:
-
-- Calm score
-- Energetic score
-- Happy score
-- Sad score
-
-These scores simulate valence-arousal space modeling.
-
-The system prioritizes interpretability over black-box complexity.
+These scores reflect acoustic alignment within low/high arousal and valence regions. The model prioritizes transparency over black-box prediction at this stage of development.
 
 ---
 
-### 3️⃣ Similarity-Based Recommendation
+### 3️⃣ Similarity & Retrieval Engine
 
-Recommendations are generated through:
+Similarity between tracks is computed using cosine similarity within MFCC feature space:
 
-- Cosine similarity
-- Distance ranking
-- Emotion alignment filtering
+- Angular alignment of feature vectors  
+- Magnitude-independent comparison  
+- Ranking based on acoustic proximity  
 
-This avoids reliance on behavioral tracking and focuses on intrinsic audio structure.
-
----
-
-## ⚡ Performance Considerations
-
-Optimization focused on:
-
-- Lightweight feature extraction
-- Efficient vector comparison
-- Scalable indexing structure
-- Modular architecture for future expansion
-
-Designed to evolve toward:
-
-- Larger dataset indexing
-- Hybrid recommendation logic
-- Real-time similarity lookup
+This allows emotionally aligned retrieval without dependence on behavioral data or user tracking.
 
 ---
 
-## 🧠 Engineering Focus
+### 4️⃣ Indexing & Data Layer
 
-### Applied Machine Learning
-- Audio signal feature engineering
-- Emotion modeling
-- Similarity metrics
+Auralis includes a structured indexing pipeline that processes collections of audio files and stores:
 
-### Human-Centered AI
-- Interpretable scoring
-- Emotion-driven recommendation logic
-- Psychological alignment of system outputs
+- File path  
+- Predicted dominant emotion  
+- Calm, energetic, happy, sad scores  
+- 26-dimensional MFCC feature representation  
 
-### Systems Design
-- Modular pipeline architecture
-- Expandable model layers
-- Clean separation of extraction, modeling, and UI
+Indexed datasets are stored in CSV format to support scalable expansion and future benchmarking.
+
+To rebuild the index locally:
+
+```bash
+python -m tools.build_index
+```
 
 ---
 
-## 🚀 Future Enhancements
+## 📊 Exploratory Statistical Analysis
 
-- Train supervised emotion classifier
-- Add deep audio embeddings
-- Introduce playlist generation logic
-- Integrate streaming API
-- Deploy scalable vector search backend
+A preliminary dataset of 12 indexed audio tracks was analyzed to evaluate distributional behavior of the emotion mapping framework.
+
+### Figure 1 – Average Emotion Scores Across Indexed Songs
+
+![Average Emotion Scores Across Indexed Songs](figures/Figure1_AvgEmotion_Across_Index.png)
+
+Calm exhibited the highest mean emotional intensity within the current dataset, while energetic remained comparatively lower. These results reflect exploratory dataset composition and demonstrate measurable differentiation across emotional dimensions.
+
+---
+
+### Figure 2 – Emotion Score Variability Across Indexed Songs
+
+![Emotion Score Variability Across Indexed Songs](figures/Figure_2_Emotion_Variability.png)
+
+Standard deviation analysis confirms non-uniform emotional distribution across indexed tracks, supporting computational coherence of the MFCC-based feature extraction and rule-based emotion mapping pipeline.
+
+These findings are exploratory and are not presented as formal validation metrics. Expanded indexing and supervised benchmarking are planned for future development phases.
+
+---
+
+## 🖥 Interactive Prototype
+
+A Streamlit-based interface demonstrates end-to-end functionality from raw audio ingestion to interpretable output.
+
+The application allows users to:
+
+- Upload one or two audio files  
+- View predicted emotion score distributions  
+- Inspect extracted feature metadata  
+- Compute cosine similarity between tracks  
+
+Run locally:
+
+```bash
+streamlit run app.py
+```
+
+---
+
+## 🧠 Research Orientation
+
+Auralis is structured as both:
+
+1. A publishable research framework grounded in acoustic feature modeling and interpretable emotion mapping  
+2. A scalable application foundation for future hybrid recommendation and conversational AI integration  
+
+The system is intentionally modular to allow:
+
+- Supervised emotion classification benchmarking  
+- Larger-scale dataset indexing (50+ tracks and beyond)  
+- User preference modeling  
+- Emotion-based playlist generation  
+- NLP and LLM-driven interaction layers  
+- Integration with scalable vector search backends  
+
+---
+
+## 🧰 Project Structure
+
+```text
+Auralis/
+├─ app.py
+├─ requirements.txt
+├─ src/
+│  └─ auralis/
+│     ├─ audio/
+│     │  ├─ mfcc.py
+│     │  ├─ features.py
+│     │  └─ similarity.py
+│     └─ emotion/
+│        └─ emotion.py
+├─ tools/
+│  └─ build_index.py
+├─ data/
+│  ├─ raw/
+│  │  ├─ samples/
+│  │  └─ songs/
+│  └─ processed/
+│     └─ research_index.csv
+└─ figures/
+   ├─ Figure1_AvgEmotion_Across_Index.png
+   └─ Figure_2_Emotion_Variability.png
+```
+
+---
+
+## 🚀 Long-Term Vision
+
+The ultimate goal of Auralis is an interactive, emotionally intelligent music recommendation system capable of:
+
+- Understanding acoustic-emotional structure  
+- Learning individual user preference patterns  
+- Recommending songs aligned with desired emotional states  
+- Generating emotion-consistent playlists  
+- Communicating through natural language interfaces  
+
+This repository represents the foundational stage of that larger capstone and research trajectory.
+
+---
+
+## 📦 Version Reference
+
+Current documented state:  
+**Release v1.0-cadscom-draft**
+
+Includes:
+
+- Research indexing pipeline  
+- Statistical visualization outputs  
+- Streamlit prototype  
+- Modular acoustic feature architecture  
 
 ---
 
 ## 👤 Author
 
-Samuel Nono  
+**Samuel Nono**  
 M.S. Data Science  
 
-Applied AI | Emotion Modeling | Intelligent Systems
+Applied AI | Emotion Modeling | Intelligent Systems | Human-Centered Machine Learning
