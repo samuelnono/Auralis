@@ -28,7 +28,7 @@ class UserProfile:
     """
     Stores a user's accumulated preference signal.
 
-    preference_vector : weighted mean of liked MFCC vectors (dim=26)
+    preference_vector : weighted mean of liked MFCC vectors (dim=46)
     emotion_affinity  : weighted mean of liked emotion scores (0-1 per label)
     interaction_log   : list of every feedback event for auditability
     total_likes       : used for incremental centroid update
@@ -58,7 +58,7 @@ class UserProfile:
         """
         Update the preference profile given user feedback on one track.
 
-        Likes  → pull the preference vector toward this track (incremental mean).
+        Likes    → pull the preference vector toward this track (incremental mean).
         Dislikes → push the preference vector away (small penalty step).
         """
         vec = np.asarray(vector, dtype=float)
@@ -72,10 +72,18 @@ class UserProfile:
                 self.preference_vector = vec.tolist()
                 self.emotion_affinity = {k: float(v) for k, v in emotion_scores.items()}
             else:
-                # Incremental centroid: new_mean = old_mean + (x - old_mean) / n
                 pv = np.asarray(self.preference_vector, dtype=float)
-                pv = pv + (vec - pv) / n
-                self.preference_vector = pv.tolist()
+
+                # Dimension mismatch — happens after a feature upgrade (e.g. 26→46 dims).
+                # Reset the profile vector to the new track rather than crashing.
+                if pv.shape != vec.shape:
+                    self.preference_vector = vec.tolist()
+                    self.total_likes = 1
+                    n = 1
+                else:
+                    # Incremental centroid: new_mean = old_mean + (x - old_mean) / n
+                    pv = pv + (vec - pv) / n
+                    self.preference_vector = pv.tolist()
 
                 for emotion in EMOTIONS:
                     old = self.emotion_affinity.get(emotion, 0.0)
@@ -87,13 +95,15 @@ class UserProfile:
             self.total_dislikes += 1
 
             if len(self.preference_vector) > 0:
-                # Nudge preference vector away (step size 0.05)
                 pv = np.asarray(self.preference_vector, dtype=float)
-                direction = vec - pv
-                norm = np.linalg.norm(direction)
-                if norm > 0:
-                    pv = pv - 0.05 * direction / norm
-                    self.preference_vector = pv.tolist()
+
+                # Skip nudge if dims don't match
+                if pv.shape == vec.shape:
+                    direction = vec - pv
+                    norm = np.linalg.norm(direction)
+                    if norm > 0:
+                        pv = pv - 0.05 * direction / norm
+                        self.preference_vector = pv.tolist()
 
         # Always log
         self.interaction_log.append(
