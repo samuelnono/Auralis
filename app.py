@@ -1,5 +1,6 @@
 import streamlit as st
 import tempfile
+import requests
 from pathlib import Path
 
 from src.auralis.audio.features import extract_features
@@ -8,12 +9,14 @@ from src.auralis.emotion.emotion import map_emotion
 from src.auralis.preference.profile import UserProfile
 from src.auralis.preference.feedback import record_feedback, feedback_summary
 from src.auralis.preference.recommender import rank_songs, load_index
+from src.auralis.chat.conversation import build_system_prompt, format_history_for_api
 
-# ── Config ──────────────────────────────────────────────────────────────────
+# ── Config ───────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Auralis", layout="wide")
 
 PROFILE_PATH = "data/processed/user_profile.json"
 INDEX_PATH   = "data/processed/research_index.csv"
+MODEL        = "claude-sonnet-4-20250514"
 
 
 # ── Session state bootstrap ──────────────────────────────────────────────────
@@ -26,12 +29,14 @@ if "rated_paths" not in st.session_state:
     )
 
 if "last_features" not in st.session_state:
-    st.session_state.last_features = None   # FeatureOutput of most recent upload
+    st.session_state.last_features = None
 if "last_emotion" not in st.session_state:
-    st.session_state.last_emotion = None    # EmotionOutput of most recent upload
+    st.session_state.last_emotion = None
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 def save_temp_file(uploaded_file) -> str:
     suffix = Path(uploaded_file.name).suffix.lower()
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -52,7 +57,6 @@ def file_summary(features_out):
 
 
 def emotion_bar(scores: dict):
-    """Render a small horizontal bar chart for emotion scores."""
     import pandas as pd
     df = pd.DataFrame(
         {"Emotion": list(scores.keys()), "Score": [round(v, 3) for v in scores.values()]}
@@ -61,7 +65,6 @@ def emotion_bar(scores: dict):
 
 
 def _apply_feedback(feat, emo, label: str):
-    """Handle a like or dislike from any part of the UI."""
     st.session_state.profile = record_feedback(
         profile=st.session_state.profile,
         vector=feat.vector,
@@ -74,16 +77,45 @@ def _apply_feedback(feat, emo, label: str):
     st.session_state.rated_paths.add(feat.meta["path"])
 
 
-# ── Navigation ───────────────────────────────────────────────────────────────
+def load_index_cached():
+    try:
+        return load_index(INDEX_PATH)
+    except FileNotFoundError:
+        return []
+
+
+def call_claude(messages: list, system: str) -> str:
+    """Call the Anthropic API and return the assistant's text response."""
+    response = requests.post(
+        "https://api.anthropic.com/v1/messages",
+        headers={"Content-Type": "application/json"},
+        json={
+            "model": MODEL,
+            "max_tokens": 1000,
+            "system": system,
+            "messages": messages,
+        },
+    )
+    if response.status_code != 200:
+        return f"Sorry, I ran into an error ({response.status_code}). Please try again."
+
+    data = response.json()
+    return "".join(
+        block.get("text", "")
+        for block in data.get("content", [])
+        if block.get("type") == "text"
+    )
+
+
+# ── Navigation ────────────────────────────────────────────────────────────────
 st.sidebar.title("🎵 Auralis")
 st.sidebar.caption("Frequency- and Emotion-Aware Music Recommendation")
 st.sidebar.markdown("---")
 tab_choice = st.sidebar.radio(
     "Navigate",
-    ["🎧 Analyze", "⭐ Recommendations", "👤 My Profile"],
+    ["🎧 Analyze", "⭐ Recommendations", "💬 Chat", "👤 My Profile"],
 )
 
-# Show compact profile snapshot in sidebar
 profile = st.session_state.profile
 if profile.has_signal():
     st.sidebar.markdown("---")
@@ -137,7 +169,6 @@ if tab_choice == "🎧 Analyze":
             _apply_feedback(f1, e1, "dislike")
             st.info("Got it — noted as a dislike.")
 
-    # ── File 2 ──────────────────────────────────────────────────────────────
     if file2 is not None:
         with st.spinner("Analyzing File 2…"):
             path2 = save_temp_file(file2)
@@ -164,7 +195,6 @@ if tab_choice == "🎧 Analyze":
                 _apply_feedback(f2, e2, "dislike")
                 st.info("Got it — noted as a dislike.")
 
-        # ── Similarity ──────────────────────────────────────────────────────
         st.markdown("---")
         st.markdown("### 🔍 Similarity Analysis")
         with st.spinner("Comparing…"):
@@ -182,10 +212,7 @@ if tab_choice == "🎧 Analyze":
         st.info("Upload **Audio File 2** to compare similarity.")
 
     st.markdown("---")
-    st.caption(
-        "Note: Emotion mapping is rule-based and interpretable — "
-        "a transparent baseline, not a clinical label."
-    )
+    st.caption("Note: Emotion mapping is rule-based and interpretable — a transparent baseline, not a clinical label.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -201,28 +228,22 @@ elif tab_choice == "⭐ Recommendations":
         )
         st.stop()
 
-    # Load index
     try:
         index = load_index(INDEX_PATH)
     except FileNotFoundError:
-        st.error(
-            f"Song index not found at `{INDEX_PATH}`. "
-            "Run `python -m tools.build_index` to generate it first."
-        )
+        st.error(f"Song index not found at `{INDEX_PATH}`. Run `python -m tools.build_index` first.")
         st.stop()
 
     if len(index) == 0:
         st.warning("The song index is empty — add tracks and rebuild the index.")
         st.stop()
 
-    # Controls
     col_ctrl1, col_ctrl2 = st.columns(2)
     with col_ctrl1:
         top_k = st.slider("Number of recommendations", 3, min(20, len(index)), 5)
     with col_ctrl2:
         alpha = st.slider(
-            "Acoustic vs emotion weight",
-            0.0, 1.0, 0.7, 0.05,
+            "Acoustic vs emotion weight", 0.0, 1.0, 0.7, 0.05,
             help="1.0 = pure MFCC similarity · 0.0 = pure emotion match",
         )
 
@@ -236,7 +257,7 @@ elif tab_choice == "⭐ Recommendations":
             st.stop()
 
     if not recs:
-        st.info("No unrated tracks left in the index. Uncheck 'Hide already-rated tracks' to see all.")
+        st.info("No unrated tracks left. Uncheck 'Hide already-rated tracks' to see all.")
         st.stop()
 
     st.markdown(f"Showing top **{len(recs)}** tracks matched to your profile "
@@ -258,13 +279,10 @@ elif tab_choice == "⭐ Recommendations":
             ).set_index("Emotion")
             st.bar_chart(scores_df)
 
-            # Feedback buttons inside recommendation card
             fb_col1, fb_col2, _ = st.columns([1, 1, 4])
             if fb_col1.button("👍", key=f"rec_like_{i}"):
-                # We only have meta from index, not a live FeatureOutput —
-                # build a minimal profile update from stored emotion scores
                 import numpy as np
-                dummy_vec = np.zeros(26)   # no stored vector in current index schema
+                dummy_vec = np.zeros(46)
                 profile = record_feedback(
                     profile=st.session_state.profile,
                     vector=dummy_vec,
@@ -280,7 +298,7 @@ elif tab_choice == "⭐ Recommendations":
 
             if fb_col2.button("👎", key=f"rec_dislike_{i}"):
                 import numpy as np
-                dummy_vec = np.zeros(26)
+                dummy_vec = np.zeros(46)
                 profile = record_feedback(
                     profile=st.session_state.profile,
                     vector=dummy_vec,
@@ -296,7 +314,85 @@ elif tab_choice == "⭐ Recommendations":
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# TAB 3 — MY PROFILE
+# TAB 3 — CHAT
+# ════════════════════════════════════════════════════════════════════════════
+elif tab_choice == "💬 Chat":
+    st.title("💬 Chat with Auralis")
+    st.caption(
+        "Ask about your music taste, request recommendations by mood, or explore "
+        "what makes a track sound the way it does — all grounded in real acoustic data."
+    )
+    st.markdown("---")
+
+    # Load index for context
+    index = load_index_cached()
+
+    # Build last analyzed track context from session state
+    last_track_meta = None
+    if st.session_state.last_features and st.session_state.last_emotion:
+        last_track_meta = {
+            **st.session_state.last_features.meta,
+            "predicted_emotion": st.session_state.last_emotion.emotion,
+            **{f"score_{k}": v for k, v in st.session_state.last_emotion.scores.items()},
+        }
+
+    # Render chat history
+    for msg in st.session_state.chat_history:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # Suggested prompts (only shown when chat is empty)
+    if not st.session_state.chat_history:
+        st.markdown("**Try asking:**")
+        suggestions = [
+            "What does my music taste say about me?",
+            "Recommend something energetic from the index",
+            "Why was Song_04 recommended to me?",
+            "What makes the last track I analyzed sound the way it does?",
+        ]
+        cols = st.columns(2)
+        for i, suggestion in enumerate(suggestions):
+            if cols[i % 2].button(suggestion, key=f"suggest_{i}", use_container_width=True):
+                st.session_state.chat_history.append({"role": "user", "content": suggestion})
+                st.rerun()
+
+    # Chat input
+    user_input = st.chat_input("Ask Auralis anything about your music...")
+
+    if user_input:
+        # Add user message
+        st.session_state.chat_history.append({"role": "user", "content": user_input})
+
+        with st.chat_message("user"):
+            st.markdown(user_input)
+
+        # Build grounded system prompt
+        system_prompt = build_system_prompt(
+            profile=st.session_state.profile,
+            index=index,
+            last_analyzed_track=last_track_meta,
+        )
+
+        # Call Claude
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking…"):
+                api_messages = format_history_for_api(st.session_state.chat_history)
+                response = call_claude(api_messages, system_prompt)
+            st.markdown(response)
+
+        # Store response
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
+
+    # Clear chat button
+    if st.session_state.chat_history:
+        st.markdown("---")
+        if st.button("🗑️ Clear chat", type="secondary"):
+            st.session_state.chat_history = []
+            st.rerun()
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# TAB 4 — MY PROFILE
 # ════════════════════════════════════════════════════════════════════════════
 elif tab_choice == "👤 My Profile":
     st.title("👤 My Preference Profile")
@@ -307,14 +403,12 @@ elif tab_choice == "👤 My Profile":
 
     summary = feedback_summary(profile)
 
-    # ── Overview metrics ────────────────────────────────────────────────────
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Liked tracks",    summary["total_likes"])
     m2.metric("Disliked tracks", summary["total_dislikes"])
     m3.metric("Total ratings",   summary["interactions"])
     m4.metric("Dominant emotion", summary["dominant_emotion"] or "—")
 
-    # ── Emotion affinity chart ───────────────────────────────────────────────
     st.markdown("---")
     st.markdown("### Emotion Affinity")
     st.caption(
@@ -328,7 +422,6 @@ elif tab_choice == "👤 My Profile":
     ).set_index("Emotion")
     st.bar_chart(aff_df)
 
-    # ── Interaction log ──────────────────────────────────────────────────────
     st.markdown("---")
     st.markdown("### Interaction History")
     if profile.interaction_log:
@@ -338,7 +431,6 @@ elif tab_choice == "👤 My Profile":
     else:
         st.info("No interactions logged yet.")
 
-    # ── Reset ────────────────────────────────────────────────────────────────
     st.markdown("---")
     if st.button("🗑️ Reset my profile", type="secondary"):
         st.session_state.profile = UserProfile()
