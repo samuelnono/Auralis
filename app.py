@@ -108,12 +108,12 @@ def call_claude(messages: list, system: str) -> str:
 
 
 # ── Navigation ────────────────────────────────────────────────────────────────
-st.sidebar.title("🎵 Auralis")
+st.sidebar.title(" Auralis")
 st.sidebar.caption("Frequency- and Emotion-Aware Music Recommendation")
 st.sidebar.markdown("---")
 tab_choice = st.sidebar.radio(
     "Navigate",
-    ["🎧 Analyze", "⭐ Recommendations", "💬 Chat", "👤 My Profile"],
+    [" Analyze", " Recommendations", " Chat", " My Profile"],
 )
 
 profile = st.session_state.profile
@@ -127,8 +127,8 @@ if profile.has_signal():
 # ════════════════════════════════════════════════════════════════════════════
 # TAB 1 — ANALYZE
 # ════════════════════════════════════════════════════════════════════════════
-if tab_choice == "🎧 Analyze":
-    st.title("🎧 Analyze Audio")
+if tab_choice == " Analyze":
+    st.title(" Analyze Audio")
     st.caption(
         "Upload one or two audio files. Auralis extracts MFCC features, "
         "maps them to emotion scores, and compares acoustic similarity."
@@ -196,7 +196,7 @@ if tab_choice == "🎧 Analyze":
                 st.info("Got it — noted as a dislike.")
 
         st.markdown("---")
-        st.markdown("### 🔍 Similarity Analysis")
+        st.markdown("###  Similarity Analysis")
         with st.spinner("Comparing…"):
             sim = compare_features(f1, f2)
             similarity = float(sim["similarity"])
@@ -394,8 +394,8 @@ elif tab_choice == "💬 Chat":
 # ════════════════════════════════════════════════════════════════════════════
 # TAB 4 — MY PROFILE
 # ════════════════════════════════════════════════════════════════════════════
-elif tab_choice == "👤 My Profile":
-    st.title("👤 My Preference Profile")
+elif tab_choice == " My Profile":
+    st.title(" My Preference Profile")
 
     if not profile.has_signal():
         st.info("No data yet. Rate some tracks in **🎧 Analyze** or **⭐ Recommendations**.")
