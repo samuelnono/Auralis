@@ -1,11 +1,11 @@
-# 🎵 Auralis  
+#  Auralis  
 **Frequency- and Emotion-Aware Music Analysis & Hybrid Recommendation Framework**
 
 Emotion Modeling | Acoustic Feature Engineering | Applied Machine Learning | Human-Centered AI
 
 ---
 
-## 🌍 Project Overview
+##  Project Overview
 
 Auralis is a frequency- and emotion-aware music analysis and recommendation framework designed to bridge acoustic signal processing with interpretable artificial intelligence.
 
@@ -25,11 +25,11 @@ This repository corresponds to:
 
 ---
 
-## 🏗 System Architecture
+##  System Architecture
 
 Auralis follows a modular four-layer architecture designed for extensibility and interpretability.
 
-### 1️⃣ Acoustic Feature Extraction
+###  Acoustic Feature Extraction
 
 Audio signals are transformed into structured numerical representations using:
 
@@ -41,7 +41,7 @@ This ensures consistent comparison across tracks of varying duration while prese
 
 ---
 
-### 2️⃣ Emotion Modeling Layer
+###  Emotion Modeling Layer
 
 Emotion representation is aligned conceptually with the valence-arousal framework.  
 Rather than using supervised classification in its current stage, Auralis applies an interpretable rule-based mapping from aggregated MFCC statistics to four emotional indicators:
@@ -55,7 +55,7 @@ These scores reflect acoustic alignment within low/high arousal and valence regi
 
 ---
 
-### 3️⃣ Similarity & Retrieval Engine
+###  Similarity & Retrieval Engine
 
 Similarity between tracks is computed using cosine similarity within MFCC feature space:
 
@@ -67,7 +67,7 @@ This allows emotionally aligned retrieval without dependence on behavioral data 
 
 ---
 
-### 4️⃣ Indexing & Data Layer
+###  Indexing & Data Layer
 
 Auralis includes a structured indexing pipeline that processes collections of audio files and stores:
 
@@ -86,7 +86,7 @@ python -m tools.build_index
 
 ---
 
-## 📊 Exploratory Statistical Analysis
+## Exploratory Statistical Analysis
 
 A preliminary dataset of 12 indexed audio tracks was analyzed to evaluate distributional behavior of the emotion mapping framework.
 
@@ -108,7 +108,7 @@ These findings are exploratory and are not presented as formal validation metric
 
 ---
 
-## 🖥 Interactive Prototype
+## Interactive Prototype
 
 A Streamlit-based interface demonstrates end-to-end functionality from raw audio ingestion to interpretable output.
 
@@ -127,7 +127,7 @@ streamlit run app.py
 
 ---
 
-## 🧠 Research Orientation
+## Research Orientation
 
 Auralis is structured as both:
 
@@ -145,7 +145,7 @@ The system is intentionally modular to allow:
 
 ---
 
-## 🧰 Project Structure
+## Project Structure
 
 ```text
 Auralis/
@@ -174,7 +174,7 @@ Auralis/
 
 ---
 
-## 🚀 Long-Term Vision
+## Long-Term Vision
 
 The ultimate goal of Auralis is an interactive, emotionally intelligent music recommendation system capable of:
 
@@ -188,7 +188,7 @@ This repository represents the foundational stage of that larger capstone and re
 
 ---
 
-## 📦 Version Reference
+## Version Reference
 
 Current documented state:  
 **Release v1.0-cadscom-draft**
@@ -202,7 +202,7 @@ Includes:
 
 ---
 
-## 👤 Author
+## Author
 
 **Samuel Nono**  
 M.S. Data Science  
