@@ -51,13 +51,13 @@ else:
             rows.append(row)
 
         except Exception as e:
-            print(f"  ⚠️  Skipped {file_path.name}: {e}")
+            print(f"    Skipped {file_path.name}: {e}")
 
     with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"\n✅ Index saved:    {OUTPUT_FILE}")
+    print(f"\n Index saved:    {OUTPUT_FILE}")
     print(f"   Songs indexed:  {len(rows)}")
     print(f"   Songs skipped:  {len(audio_files) - len(rows)}")
