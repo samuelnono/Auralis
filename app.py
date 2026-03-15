@@ -16,7 +16,7 @@ st.set_page_config(page_title="Auralis", layout="wide")
 
 PROFILE_PATH = "data/processed/user_profile.json"
 INDEX_PATH   = "data/processed/research_index.csv"
-MODEL        = "claude-sonnet-4-20250514"
+MODEL        = "claude-sonnet-4-5"
 
 
 # ── Session state bootstrap ──────────────────────────────────────────────────
@@ -86,9 +86,14 @@ def load_index_cached():
 
 def call_claude(messages: list, system: str) -> str:
     """Call the Anthropic API and return the assistant's text response."""
+    import os
     response = requests.post(
         "https://api.anthropic.com/v1/messages",
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""),
+            "anthropic-version": "2023-06-01",
+         },
         json={
             "model": MODEL,
             "max_tokens": 1000,
