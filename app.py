@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import tempfile
 import requests
@@ -10,24 +11,23 @@ from src.auralis.preference.profile import UserProfile
 from src.auralis.preference.feedback import record_feedback, feedback_summary
 from src.auralis.preference.recommender import rank_songs, load_index
 from src.auralis.chat.conversation import build_system_prompt, format_history_for_api
+from src.auralis.playlist.generator import generate_playlist, playlist_to_csv
 
 # ── Config ───────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Auralis", layout="wide")
 
 PROFILE_PATH = "data/processed/user_profile.json"
 INDEX_PATH   = "data/processed/research_index.csv"
-MODEL        = "claude-sonnet-4-5"
+MODEL        = "claude-haiku-4-5-20251001"
 
 
 # ── Session state bootstrap ──────────────────────────────────────────────────
 if "profile" not in st.session_state:
     st.session_state.profile = UserProfile.load_or_new(PROFILE_PATH)
-
 if "rated_paths" not in st.session_state:
     st.session_state.rated_paths = set(
         e["track"] for e in st.session_state.profile.interaction_log
     )
-
 if "last_features" not in st.session_state:
     st.session_state.last_features = None
 if "last_emotion" not in st.session_state:
@@ -43,10 +43,8 @@ def save_temp_file(uploaded_file) -> str:
         tmp.write(uploaded_file.getbuffer())
         return tmp.name
 
-
 def pretty_scores(scores: dict) -> dict:
     return {k: round(float(v), 4) for k, v in scores.items()}
-
 
 def file_summary(features_out):
     meta = features_out.meta
@@ -55,14 +53,12 @@ def file_summary(features_out):
     c2.metric("Duration (sec)",   round(float(meta.get("duration_sec", 0) or 0), 2))
     c3.metric("Vector dim",       int(meta.get("vector_dim", 0) or 0))
 
-
 def emotion_bar(scores: dict):
     import pandas as pd
     df = pd.DataFrame(
         {"Emotion": list(scores.keys()), "Score": [round(v, 3) for v in scores.values()]}
     ).set_index("Emotion")
     st.bar_chart(df)
-
 
 def _apply_feedback(feat, emo, label: str):
     st.session_state.profile = record_feedback(
@@ -76,24 +72,20 @@ def _apply_feedback(feat, emo, label: str):
     )
     st.session_state.rated_paths.add(feat.meta["path"])
 
-
 def load_index_cached():
     try:
         return load_index(INDEX_PATH)
     except FileNotFoundError:
         return []
 
-
 def call_claude(messages: list, system: str) -> str:
-    """Call the Anthropic API and return the assistant's text response."""
-    import os
     response = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={
             "Content-Type": "application/json",
             "x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""),
             "anthropic-version": "2023-06-01",
-         },
+        },
         json={
             "model": MODEL,
             "max_tokens": 1000,
@@ -103,7 +95,6 @@ def call_claude(messages: list, system: str) -> str:
     )
     if response.status_code != 200:
         return f"Sorry, I ran into an error ({response.status_code}). Please try again."
-
     data = response.json()
     return "".join(
         block.get("text", "")
@@ -113,12 +104,12 @@ def call_claude(messages: list, system: str) -> str:
 
 
 # ── Navigation ────────────────────────────────────────────────────────────────
-st.sidebar.title(" Auralis")
+st.sidebar.title("🎵 Auralis")
 st.sidebar.caption("Frequency- and Emotion-Aware Music Recommendation")
 st.sidebar.markdown("---")
 tab_choice = st.sidebar.radio(
     "Navigate",
-    [" Analyze", " Recommendations", " Chat", " My Profile"],
+    ["🎧 Analyze", "⭐ Recommendations", "🎵 Playlist", "💬 Chat", "👤 My Profile"],
 )
 
 profile = st.session_state.profile
@@ -132,12 +123,9 @@ if profile.has_signal():
 # ════════════════════════════════════════════════════════════════════════════
 # TAB 1 — ANALYZE
 # ════════════════════════════════════════════════════════════════════════════
-if tab_choice == " Analyze":
-    st.title(" Analyze Audio")
-    st.caption(
-        "Upload one or two audio files. Auralis extracts MFCC features, "
-        "maps them to emotion scores, and compares acoustic similarity."
-    )
+if tab_choice == "🎧 Analyze":
+    st.title("🎧 Analyze Audio")
+    st.caption("Upload one or two audio files. Auralis extracts MFCC features, maps them to emotion scores, and compares acoustic similarity.")
     st.markdown("---")
 
     file1 = st.file_uploader("Audio File 1", type=["wav", "mp3"])
@@ -163,7 +151,6 @@ if tab_choice == " Analyze":
             emotion_bar(e1.scores)
         with st.expander("Raw feature metadata"):
             st.json(f1.meta)
-
     with col_act:
         st.markdown("### Rate this track")
         st.caption("Help Auralis learn your taste.")
@@ -189,7 +176,6 @@ if tab_choice == " Analyze":
                 emotion_bar(e2.scores)
             with st.expander("Raw feature metadata"):
                 st.json(f2.meta)
-
         with col2_act:
             st.markdown("### Rate this track")
             st.caption("Help Auralis learn your taste.")
@@ -201,7 +187,7 @@ if tab_choice == " Analyze":
                 st.info("Got it — noted as a dislike.")
 
         st.markdown("---")
-        st.markdown("###  Similarity Analysis")
+        st.markdown("### 🔍 Similarity Analysis")
         with st.spinner("Comparing…"):
             sim = compare_features(f1, f2)
             similarity = float(sim["similarity"])
@@ -227,10 +213,7 @@ elif tab_choice == "⭐ Recommendations":
     st.title("⭐ Recommendations")
 
     if not profile.has_signal():
-        st.warning(
-            "Your profile is empty. Go to **🎧 Analyze**, upload a track, "
-            "and hit 👍 Like to teach Auralis your taste."
-        )
+        st.warning("Your profile is empty. Go to **🎧 Analyze**, upload a track, and hit 👍 Like to teach Auralis your taste.")
         st.stop()
 
     try:
@@ -247,10 +230,8 @@ elif tab_choice == "⭐ Recommendations":
     with col_ctrl1:
         top_k = st.slider("Number of recommendations", 3, min(20, len(index)), 5)
     with col_ctrl2:
-        alpha = st.slider(
-            "Acoustic vs emotion weight", 0.0, 1.0, 0.7, 0.05,
-            help="1.0 = pure MFCC similarity · 0.0 = pure emotion match",
-        )
+        alpha = st.slider("Acoustic vs emotion weight", 0.0, 1.0, 0.7, 0.05,
+                          help="1.0 = pure MFCC similarity · 0.0 = pure emotion match")
 
     exclude = list(st.session_state.rated_paths) if st.checkbox("Hide already-rated tracks", value=True) else []
 
@@ -265,8 +246,7 @@ elif tab_choice == "⭐ Recommendations":
         st.info("No unrated tracks left. Uncheck 'Hide already-rated tracks' to see all.")
         st.stop()
 
-    st.markdown(f"Showing top **{len(recs)}** tracks matched to your profile "
-                f"(dominant taste: `{profile.dominant_emotion()}`).")
+    st.markdown(f"Showing top **{len(recs)}** tracks matched to your profile (dominant taste: `{profile.dominant_emotion()}`).")
     st.markdown("---")
 
     for i, rec in enumerate(recs, 1):
@@ -276,21 +256,18 @@ elif tab_choice == "⭐ Recommendations":
             col_s, col_e = st.columns(2)
             col_s.metric("Acoustic match", f"{rec['mfcc_sim']:.0%}")
             col_e.metric("Emotion match",  f"{rec['emotion_sim']:.0%}")
-
             import pandas as pd
             scores_df = pd.DataFrame(
                 {"Emotion": list(rec["emotion_scores"].keys()),
                  "Score":   list(rec["emotion_scores"].values())}
             ).set_index("Emotion")
             st.bar_chart(scores_df)
-
             fb_col1, fb_col2, _ = st.columns([1, 1, 4])
             if fb_col1.button("👍", key=f"rec_like_{i}"):
                 import numpy as np
-                dummy_vec = np.zeros(46)
                 profile = record_feedback(
                     profile=st.session_state.profile,
-                    vector=dummy_vec,
+                    vector=np.zeros(46),
                     emotion_scores=rec["emotion_scores"],
                     emotion_label=rec["emotion"],
                     track_path=rec["path"],
@@ -300,13 +277,11 @@ elif tab_choice == "⭐ Recommendations":
                 st.session_state.profile = profile
                 st.session_state.rated_paths.add(rec["path"])
                 st.success("Profile updated!")
-
             if fb_col2.button("👎", key=f"rec_dislike_{i}"):
                 import numpy as np
-                dummy_vec = np.zeros(46)
                 profile = record_feedback(
                     profile=st.session_state.profile,
-                    vector=dummy_vec,
+                    vector=np.zeros(46),
                     emotion_scores=rec["emotion_scores"],
                     emotion_label=rec["emotion"],
                     track_path=rec["path"],
@@ -319,20 +294,114 @@ elif tab_choice == "⭐ Recommendations":
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# TAB 3 — CHAT
+# TAB 3 — PLAYLIST
+# ════════════════════════════════════════════════════════════════════════════
+elif tab_choice == "🎵 Playlist":
+    st.title("🎵 Playlist Generator")
+    st.caption("Generate an emotion-aware playlist from your indexed song collection.")
+    st.markdown("---")
+
+    index = load_index_cached()
+    if not index:
+        st.error(f"Song index not found at `{INDEX_PATH}`. Run `python -m tools.build_index` first.")
+        st.stop()
+
+    # ── Mode selector ─────────────────────────────────────────────────────────
+    mode = st.radio(
+        "Generation mode",
+        ["🎭 Filter by emotion", "👤 Match my profile"],
+        horizontal=True,
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if mode == "🎭 Filter by emotion":
+            target_emotion = st.selectbox(
+                "Target emotion",
+                ["calm", "energetic", "happy", "sad"],
+                index=0,
+            )
+        else:
+            if not profile.has_signal():
+                st.warning("No profile yet — rate some tracks in **🎧 Analyze** first, then come back.")
+                st.stop()
+            target_emotion = None
+            st.info(f"Matching to your profile (dominant: `{profile.dominant_emotion()}`)")
+
+    with col2:
+        length = st.slider("Playlist length", 3, min(20, len(index)), 8)
+
+    # ── Generate ──────────────────────────────────────────────────────────────
+    if st.button("🎵 Generate Playlist", type="primary", use_container_width=True):
+        with st.spinner("Building playlist…"):
+            try:
+                playlist = generate_playlist(
+                    index=index,
+                    mode="emotion" if mode == "🎭 Filter by emotion" else "profile",
+                    target_emotion=target_emotion,
+                    profile=profile,
+                    length=length,
+                )
+                st.session_state["current_playlist"] = playlist
+            except ValueError as e:
+                st.error(str(e))
+                st.stop()
+
+    # ── Display playlist ──────────────────────────────────────────────────────
+    playlist = st.session_state.get("current_playlist", [])
+
+    if playlist:
+        target_label = target_emotion if mode == "🎭 Filter by emotion" else f"your {profile.dominant_emotion()} profile"
+        st.markdown(f"### 🎶 Playlist — {len(playlist)} tracks matched to **{target_label}**")
+        st.markdown("---")
+
+        import pandas as pd
+
+        # Summary table
+        table_data = []
+        for track in playlist:
+            scores = track["emotion_scores"]
+            table_data.append({
+                "#":        track["rank"],
+                "Track":    track["track_name"],
+                "Emotion":  track["dominant_emotion"],
+                "Calm":     f"{scores.get('calm', 0):.2f}",
+                "Energetic":f"{scores.get('energetic', 0):.2f}",
+                "Happy":    f"{scores.get('happy', 0):.2f}",
+                "Sad":      f"{scores.get('sad', 0):.2f}",
+                "Score":    f"{track['relevance_score']:.2f}",
+            })
+        st.dataframe(pd.DataFrame(table_data).set_index("#"), use_container_width=True)
+
+        # Expanded detail per track
+        st.markdown("---")
+        for track in playlist:
+            with st.expander(f"#{track['rank']} · {track['track_name']} — {track['dominant_emotion']}"):
+                emotion_bar(track["emotion_scores"])
+                st.caption(f"Relevance score: {track['relevance_score']:.4f}")
+
+        # ── CSV Export ────────────────────────────────────────────────────────
+        st.markdown("---")
+        csv_data = playlist_to_csv(playlist)
+        st.download_button(
+            label="⬇️ Export playlist as CSV",
+            data=csv_data,
+            file_name=f"auralis_playlist_{target_label.replace(' ', '_')}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# TAB 4 — CHAT
 # ════════════════════════════════════════════════════════════════════════════
 elif tab_choice == "💬 Chat":
     st.title("💬 Chat with Auralis")
-    st.caption(
-        "Ask about your music taste, request recommendations by mood, or explore "
-        "what makes a track sound the way it does — all grounded in real acoustic data."
-    )
+    st.caption("Ask about your music taste, request recommendations by mood, or explore what makes a track sound the way it does — all grounded in real acoustic data.")
     st.markdown("---")
 
-    # Load index for context
     index = load_index_cached()
-
-    # Build last analyzed track context from session state
     last_track_meta = None
     if st.session_state.last_features and st.session_state.last_emotion:
         last_track_meta = {
@@ -341,12 +410,10 @@ elif tab_choice == "💬 Chat":
             **{f"score_{k}": v for k, v in st.session_state.last_emotion.scores.items()},
         }
 
-    # Render chat history
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Suggested prompts (only shown when chat is empty)
     if not st.session_state.chat_history:
         st.markdown("**Try asking:**")
         suggestions = [
@@ -361,34 +428,26 @@ elif tab_choice == "💬 Chat":
                 st.session_state.chat_history.append({"role": "user", "content": suggestion})
                 st.rerun()
 
-    # Chat input
     user_input = st.chat_input("Ask Auralis anything about your music...")
 
     if user_input:
-        # Add user message
         st.session_state.chat_history.append({"role": "user", "content": user_input})
-
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        # Build grounded system prompt
         system_prompt = build_system_prompt(
             profile=st.session_state.profile,
             index=index,
             last_analyzed_track=last_track_meta,
         )
-
-        # Call Claude
         with st.chat_message("assistant"):
             with st.spinner("Thinking…"):
                 api_messages = format_history_for_api(st.session_state.chat_history)
                 response = call_claude(api_messages, system_prompt)
             st.markdown(response)
 
-        # Store response
         st.session_state.chat_history.append({"role": "assistant", "content": response})
 
-    # Clear chat button
     if st.session_state.chat_history:
         st.markdown("---")
         if st.button("🗑️ Clear chat", type="secondary"):
@@ -397,10 +456,10 @@ elif tab_choice == "💬 Chat":
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# TAB 4 — MY PROFILE
+# TAB 5 — MY PROFILE
 # ════════════════════════════════════════════════════════════════════════════
-elif tab_choice == " My Profile":
-    st.title(" My Preference Profile")
+elif tab_choice == "👤 My Profile":
+    st.title("👤 My Preference Profile")
 
     if not profile.has_signal():
         st.info("No data yet. Rate some tracks in **🎧 Analyze** or **⭐ Recommendations**.")
@@ -416,10 +475,7 @@ elif tab_choice == " My Profile":
 
     st.markdown("---")
     st.markdown("### Emotion Affinity")
-    st.caption(
-        "Your accumulated preference across emotional dimensions. "
-        "Derived from all tracks you've liked so far."
-    )
+    st.caption("Your accumulated preference across emotional dimensions. Derived from all tracks you've liked so far.")
     import pandas as pd
     aff_df = pd.DataFrame(
         {"Emotion": list(summary["emotion_affinity"].keys()),
