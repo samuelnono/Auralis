@@ -242,32 +242,75 @@ def index_songs():
 @app.post("/chat")
 def chat(req: ChatRequest):
     """Send a message to the Auralis LLM assistant."""
+
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    if not api_key:
-        raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY not set.")
+
     profile = get_profile()
-    index   = get_index()
-    system  = build_system_prompt(
+    index = get_index()
+
+    system = build_system_prompt(
         profile=profile,
         index=index,
         last_analyzed_track=req.last_track_meta,
     )
-    response = requests.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={
-            "Content-Type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-        },
-        json={
-            "model": MODEL,
-            "max_tokens": 1000,
-            "system": system,
-            "messages": req.messages,
-        },
-    )
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
-    data = response.json()
-    text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
-    return {"response": text}
+
+    payload = {
+        "model": MODEL,
+        "max_tokens": 1000,
+        "system": system,
+        "messages": req.messages,
+    }
+
+    #  Try real API first
+    if api_key:
+        try:
+            response = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                },
+                json=payload,
+                timeout=10,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                text = "".join(
+                    b.get("text", "")
+                    for b in data.get("content", [])
+                    if b.get("type") == "text"
+                )
+                return {"response": text}
+
+            else:
+                print("⚠️ Anthropic failed, switching to fallback mode")
+                print(response.text)
+
+        except Exception as e:
+            print("⚠️ Exception calling Anthropic:", e)
+
+    #  FALLBACK MODE (DEMO SAFE)
+    last_user_msg = req.messages[-1]["content"] if req.messages else ""
+
+    fallback_response = f"""
+Auralis Insight:
+
+Based on your question: "{last_user_msg}"
+
+This system analyzes music through frequency structure using MFCC features and maps them into emotional space.
+
+At this stage, recommendations are driven by:
+- Acoustic similarity (cosine similarity)
+- Emotion alignment (calm, energetic, happy, sad)
+
+Future versions will incorporate:
+- User preference learning
+- Playlist generation
+- Conversational intelligence
+
+(This is a fallback response due to API limitations.)
+"""
+
+    return {"response": fallback_response.strip()}
