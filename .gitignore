@@ -13,3 +13,7 @@ __pycache__/
 
 emotion_log.csv
 
+
+# secrets
+.env
+.env.local

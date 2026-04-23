@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from src.auralis.audio.features import extract_features
 from src.auralis.audio.similarity import compare_features
 from src.auralis.emotion.emotion import map_emotion
+from src.auralis.emotion.valence_arousal import compute_mood, mood_from_discrete
 from src.auralis.preference.profile import UserProfile
 from src.auralis.preference.feedback import record_feedback, feedback_summary
 from src.auralis.preference.recommender import rank_songs, load_index
@@ -95,10 +96,12 @@ async def analyze(file: UploadFile = File(...)):
     try:
         features = extract_features(tmp_path)
         emotion  = map_emotion(features.meta)
+        mood     = compute_mood(features.meta)
         return {
             "path":     tmp_path,
             "emotion":  emotion.emotion,
             "scores":   emotion.scores,
+            "mood":     mood.as_dict(),
             "meta":     {k: v for k, v in features.meta.items() if k != "mfcc_mean" and k != "mfcc_std"},
             "vector":   features.vector.tolist(),
             "mfcc_mean": features.meta.get("mfcc_mean", []),
@@ -223,18 +226,51 @@ def playlist_export(mode: str = "emotion", target_emotion: str = "calm", length:
 
 @app.get("/index")
 def index_songs():
-    """Return the full song index."""
+    """Return the full song index, including dimensional mood coordinates.
+
+    If the CSV was produced by the new (v1.1+) indexer it will contain
+    valence/arousal columns directly. For legacy rows we synthesise
+    approximate coordinates from the discrete 4-class scores so the
+    circumplex UI still works without re-indexing.
+    """
     index = get_index()
     songs = []
     for row in index:
+        scores = {
+            "calm":      float(row.get("calm", 0)      or 0),
+            "energetic": float(row.get("energetic", 0) or 0),
+            "happy":     float(row.get("happy", 0)     or 0),
+            "sad":       float(row.get("sad", 0)       or 0),
+        }
+
+        # Prefer stored continuous coordinates when available.
+        try:
+            valence  = float(row["valence"])
+            arousal  = float(row["arousal"])
+            quadrant = row.get("quadrant") or ""
+            nuanced  = row.get("nuanced_tag") or ""
+            has_mood = True
+        except (KeyError, TypeError, ValueError):
+            has_mood = False
+
+        if not has_mood:
+            mp = mood_from_discrete(scores)
+            valence  = mp.valence
+            arousal  = mp.arousal
+            quadrant = mp.quadrant
+            nuanced  = mp.nuanced_tag
+
         songs.append({
-            "path": row.get("path", ""),
-            "name": Path(row.get("path", "unknown")).stem,
+            "path":    row.get("path", ""),
+            "name":    Path(row.get("path", "unknown")).stem,
             "emotion": row.get("predicted_emotion") or row.get("emotion", "unknown"),
-            "calm":     float(row.get("calm", 0)),
-            "energetic":float(row.get("energetic", 0)),
-            "happy":    float(row.get("happy", 0)),
-            "sad":      float(row.get("sad", 0)),
+            **scores,
+            "mood": {
+                "valence":     valence,
+                "arousal":     arousal,
+                "quadrant":    quadrant,
+                "nuanced_tag": nuanced,
+            },
         })
     return {"songs": songs, "total": len(songs)}
 

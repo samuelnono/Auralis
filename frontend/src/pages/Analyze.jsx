@@ -21,6 +21,103 @@ function EmotionScores({ scores }) {
   )
 }
 
+/**
+ * Circumplex visualization of the continuous valence-arousal mood coordinates.
+ * Valence maps to the horizontal axis (left = gloomy, right = uplifting),
+ * arousal maps to the vertical axis (bottom = calm, top = energetic).
+ */
+function MoodPlane({ mood }) {
+  if (!mood) return null
+
+  const size = 240
+  const pad  = 24
+  const half = size / 2
+  const r    = half - pad
+
+  // Map (-1..1) coordinates into SVG pixel space.
+  // SVG y grows downward, so invert arousal.
+  const px = half + mood.valence * r
+  const py = half - mood.arousal * r
+
+  return (
+    <div className="mood-plane">
+      <div className="mood-plane-header">
+        <div className="mood-plane-title">Mood Circumplex</div>
+        <div className="mood-plane-subtitle">
+          Continuous valence x arousal - v1.1 dimensional layer
+        </div>
+      </div>
+
+      <div className="mood-plane-body">
+        <svg width={size} height={size} className="mood-plane-svg">
+          <rect x="1" y="1" width={size - 2} height={size - 2} rx="14"
+            fill="var(--bg-primary)" stroke="var(--border-light)" />
+          <circle cx={half} cy={half} r={r}
+            fill="none" stroke="var(--border-light)" strokeDasharray="2 4" />
+          <line x1={pad} y1={half} x2={size - pad} y2={half}
+            stroke="var(--border-light)" />
+          <line x1={half} y1={pad} x2={half} y2={size - pad}
+            stroke="var(--border-light)" />
+
+          <text x={size - pad + 2} y={half + 4} fontSize="9"
+            fill="var(--text-muted)" textAnchor="start">+ valence</text>
+          <text x={pad - 2} y={half + 4} fontSize="9"
+            fill="var(--text-muted)" textAnchor="end">- valence</text>
+          <text x={half} y={pad - 4} fontSize="9"
+            fill="var(--text-muted)" textAnchor="middle">+ arousal</text>
+          <text x={half} y={size - pad + 12} fontSize="9"
+            fill="var(--text-muted)" textAnchor="middle">- arousal</text>
+
+          <text x={size - pad - 4} y={pad + 8} fontSize="10"
+            fill="var(--energetic)" textAnchor="end" fontWeight="600">Excited</text>
+          <text x={pad + 4} y={pad + 8} fontSize="10"
+            fill="#ff5577" textAnchor="start" fontWeight="600">Tense</text>
+          <text x={pad + 4} y={size - pad - 4} fontSize="10"
+            fill="var(--sad)" textAnchor="start" fontWeight="600">Melancholic</text>
+          <text x={size - pad - 4} y={size - pad - 4} fontSize="10"
+            fill="var(--calm)" textAnchor="end" fontWeight="600">Serene</text>
+
+          <circle cx={px} cy={py} r="9"
+            fill="var(--accent)" stroke="var(--bg-primary)" strokeWidth="2"
+            style={{ filter: 'drop-shadow(0 0 6px var(--accent-glow))' }} />
+        </svg>
+
+        <div className="mood-plane-details">
+          <div className="mood-chip mood-chip-primary">
+            {mood.nuanced_tag}
+          </div>
+          <div className="mood-plane-row">
+            <span className="mood-plane-label">Quadrant</span>
+            <span className="mood-plane-value">{mood.quadrant}</span>
+          </div>
+          <div className="mood-plane-row">
+            <span className="mood-plane-label">Valence</span>
+            <span className="mood-plane-value">
+              {mood.valence >= 0 ? '+' : ''}{mood.valence.toFixed(2)}
+            </span>
+          </div>
+          <div className="mood-plane-row">
+            <span className="mood-plane-label">Arousal</span>
+            <span className="mood-plane-value">
+              {mood.arousal >= 0 ? '+' : ''}{mood.arousal.toFixed(2)}
+            </span>
+          </div>
+          <div className="mood-plane-row">
+            <span className="mood-plane-label">Intensity</span>
+            <span className="mood-plane-value">
+              {(mood.confidence * 100).toFixed(0)}%
+            </span>
+          </div>
+          {mood.rationale && (
+            <div className="mood-plane-rationale">{mood.rationale}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 function TrackResult({ result, onFeedback, fileNum }) {
   const [rated, setRated] = useState(null)
 
@@ -94,6 +191,13 @@ function TrackResult({ result, onFeedback, fileNum }) {
 
       <hr className="divider" style={{ margin: '16px 0' }} />
       <EmotionScores scores={result.scores} />
+
+      {result.mood && (
+        <>
+          <hr className="divider" style={{ margin: '16px 0' }} />
+          <MoodPlane mood={result.mood} />
+        </>
+      )}
 
       {rated && (
         <div style={{ marginTop: 12, fontSize: 12, color: 'var(--accent)' }}>

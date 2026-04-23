@@ -70,7 +70,7 @@ This provides a fully reproducible environment across machines.
 
 ##  Core System Design
 
-###  Acoustic Feature Extraction
+### Acoustic Feature Extraction
 
 * 13 MFCC coefficients per frame
 * Aggregated via mean and standard deviation
@@ -103,7 +103,7 @@ This enables recommendations without relying on behavioral tracking.
 
 ---
 
-###  Indexing & Data Layer
+### Indexing & Data Layer
 
 Each indexed track includes:
 
@@ -205,7 +205,14 @@ Auralis/
 
 **v1.0 – CADSCOM Draft + Full-Stack Implementation**
 
-Includes:
+- Continuous valence-arousal coordinates for every track
+- Four-quadrant + eight-tag nuanced mood vocabulary
+- Mood circumplex visualization in the Analyze UI
+- LLM chat system-prompt extended with dimensional mood context
+- Indexer rewritten to persist both discrete and continuous mood columns
+- Backend `/analyze` and `/index` endpoints return the new mood object
+- Backward-compatible: legacy index rows synthesise approximate mood
+  coordinates from the discrete scores so no re-indexing is strictly required
 
 * Research indexing pipeline
 * Emotion modeling system
