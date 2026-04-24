@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { API } from '../config'
 
-const API = 'http://localhost:8000'
 const EMOTION_EMOJIS = { calm: '🌊', energetic: '⚡', happy: '☀️', sad: '🌧️' }
 const MOOD_DESCRIPTIONS = {
   calm: 'Low tempo, smooth textures, gentle energy',

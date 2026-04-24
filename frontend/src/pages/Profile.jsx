@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { API } from '../config'
 
-const API = 'http://localhost:8000'
 const EMOTION_COLORS = { calm: 'var(--calm)', energetic: 'var(--energetic)', happy: 'var(--happy)', sad: 'var(--sad)' }
 
 export default function Profile({ profile, onReset }) {

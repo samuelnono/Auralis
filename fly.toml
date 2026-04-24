@@ -1,0 +1,42 @@
+# Auralis backend — Fly.io deployment config.
+#
+# Deploy:
+#     flyctl launch --copy-config --no-deploy   # first time, to create the app
+#     flyctl secrets set ANTHROPIC_API_KEY=sk-ant-...
+#     flyctl secrets set CORS_ORIGINS=https://auralis.vercel.app
+#     flyctl deploy
+#
+# The app is built from backend/Dockerfile; `data/` is baked into the image
+# so the indexed songs ship with the service (no external storage needed).
+
+app = "auralis"
+primary_region = "ord"    # Change to the Fly region nearest you (sjc, iad, lhr, fra, nrt, syd, etc.)
+
+[build]
+  dockerfile = "backend/Dockerfile"
+
+[env]
+  # Public (non-secret) configuration. Secrets go in `flyctl secrets set`.
+  CHAT_RATE_LIMIT = "10"
+  CHAT_RATE_WINDOW_SEC = "3600"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"   # save money by stopping idle VMs
+  auto_start_machines = true
+  min_machines_running = 0      # scale to zero when idle
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpus = 1

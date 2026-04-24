@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
-
-const API = 'http://localhost:8000'
+import { API } from '../config'
 
 const SUGGESTIONS = [
   "What does my music taste say about me?",

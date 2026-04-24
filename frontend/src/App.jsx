@@ -5,6 +5,7 @@ import Recommendations from './pages/Recommendations'
 import Playlist from './pages/Playlist'
 import Chat from './pages/Chat'
 import Profile from './pages/Profile'
+import { API } from './config'
 import './App.css'
 
 function App() {
@@ -12,7 +13,7 @@ function App() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('http://localhost:8000/profile')
+      const res = await fetch(`${API}/profile`)
       const data = await res.json()
       setProfile(data)
     } catch (e) {}

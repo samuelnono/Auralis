@@ -10,10 +10,12 @@ load_dotenv()
 import json
 import tempfile
 import requests
+from collections import defaultdict
+from time import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -29,10 +31,19 @@ from src.auralis.chat.conversation import build_system_prompt, format_history_fo
 
 app = FastAPI(title="Auralis API")
 
-# Allow React dev server to call this API
+# CORS origins are env-driven so the same image works in dev, staging and prod.
+# Locally, the defaults cover the Vite (5173) and CRA (3000) dev servers.
+# In production (Fly.io), set CORS_ORIGINS to the Vercel URL, e.g.:
+#     flyctl secrets set CORS_ORIGINS=https://auralis.vercel.app
+_DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://localhost:3000"
+CORS_ORIGINS = [
+    o.strip()
+    for o in os.environ.get("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,6 +52,38 @@ app.add_middleware(
 PROFILE_PATH = "data/processed/user_profile.json"
 INDEX_PATH   = "data/processed/research_index.csv"
 MODEL        = "claude-haiku-4-5-20251001"
+
+# ── Per-IP rate limiting for /chat (in-memory, process-local) ─────────────────
+# Keeps the public demo cheap: each IP gets N chat messages per rolling hour.
+# Tune via env vars; on Fly.io set e.g. `flyctl secrets set CHAT_RATE_LIMIT=10`.
+CHAT_RATE_LIMIT      = int(os.environ.get("CHAT_RATE_LIMIT", "10"))
+CHAT_RATE_WINDOW_SEC = int(os.environ.get("CHAT_RATE_WINDOW_SEC", "3600"))
+_chat_hits: dict = defaultdict(list)
+
+def _client_ip(request: Request) -> str:
+    """Best-effort real client IP behind reverse proxies (Fly.io, Vercel)."""
+    for header in ("fly-client-ip", "x-forwarded-for", "x-real-ip"):
+        val = request.headers.get(header)
+        if val:
+            return val.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+def _enforce_chat_rate(request: Request) -> None:
+    ip = _client_ip(request)
+    now = time()
+    window_start = now - CHAT_RATE_WINDOW_SEC
+    hits = [t for t in _chat_hits[ip] if t > window_start]
+    if len(hits) >= CHAT_RATE_LIMIT:
+        retry_in = int(hits[0] + CHAT_RATE_WINDOW_SEC - now)
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"Chat rate limit reached ({CHAT_RATE_LIMIT}/hour). "
+                f"Try again in about {max(retry_in, 1) // 60 + 1} min."
+            ),
+        )
+    hits.append(now)
+    _chat_hits[ip] = hits
 
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
@@ -276,8 +319,11 @@ def index_songs():
 
 
 @app.post("/chat")
-def chat(req: ChatRequest):
+def chat(req: ChatRequest, request: Request):
     """Send a message to the Auralis LLM assistant."""
+
+    # Per-IP rolling-hour rate limit to keep the public demo affordable.
+    _enforce_chat_rate(request)
 
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 
