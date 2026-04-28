@@ -218,7 +218,7 @@ Auralis began as a CADSCOM (Computational Audio and Data Science Conference on M
 
 **Samuel Nono**
 M.S. Data Science · Minnesota State University, Mankato
-[samuelnono44@gmail.com](mailto:samuelnono44@gmail.com)
+[nonosamuel156@gmail.com](mailto:nonosamuel156@gmail.com)
 
 ---
 
