@@ -18,6 +18,7 @@ COPY data ./data
 
 EXPOSE 8000
 
-# Two workers is a sensible default for a small Fly.io VM; tune up on larger
+# One worker keeps the full machine memory available for librosa's MFCC
+# extraction (which can balloon during audio decode). Tune up on larger
 # instances. Fly routes traffic to port 8000 via the internal_port in fly.toml.
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

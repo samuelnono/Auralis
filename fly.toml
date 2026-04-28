@@ -9,7 +9,7 @@
 # The app is built from backend/Dockerfile; `data/` is baked into the image
 # so the indexed songs ship with the service (no external storage needed).
 
-app = "auralis"
+app = "auralis-audio-nono"
 primary_region = "ord"    # Change to the Fly region nearest you (sjc, iad, lhr, fra, nrt, syd, etc.)
 
 [build]
@@ -38,5 +38,5 @@ primary_region = "ord"    # Change to the Fly region nearest you (sjc, iad, lhr,
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "512mb"
+  memory = "1gb"     # librosa MFCC extraction peaks ~300mb on a 30mb WAV; 1gb gives headroom
   cpus = 1
