@@ -38,5 +38,5 @@ primary_region = "ord"    # Change to the Fly region nearest you (sjc, iad, lhr,
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "1gb"     # librosa MFCC extraction peaks ~300mb on a 30mb WAV; 1gb gives headroom
+  memory = "1gb"     # 1gb gives headroom over the 30s/22kHz analyze trim — see backend/main.py
   cpus = 1

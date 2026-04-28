@@ -24,6 +24,8 @@ def extract_features(
         "spectral_centroid_mean",
         "spectral_centroid_std",
     ),
+    max_duration: float | None = None,
+    target_sr: int | None = None,
 ) -> FeatureOutput:
     """
     Extract a fixed-length feature vector from an audio file.
@@ -40,7 +42,12 @@ def extract_features(
     All scalar features are normalised to a comparable range so they
     don't dominate the cosine similarity computation.
     """
-    mfcc_out = extract_mfcc(path, n_mfcc=n_mfcc)
+    mfcc_out = extract_mfcc(
+        path,
+        n_mfcc=n_mfcc,
+        max_duration=max_duration,
+        target_sr=target_sr,
+    )
     mfcc = np.asarray(mfcc_out["mfcc"], dtype=float)
 
     mfcc_mean = np.mean(mfcc, axis=1)

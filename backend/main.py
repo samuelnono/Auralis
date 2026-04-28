@@ -137,7 +137,10 @@ async def analyze(file: UploadFile = File(...)):
         tmp.write(await file.read())
         tmp_path = tmp.name
     try:
-        features = extract_features(tmp_path)
+        # Trim to a 30s mono sample at 22kHz so memory stays bounded on
+        # small Fly.io VMs. Emotion is stable across a track; this gives
+        # the same recommendation signal at ~5% of the memory cost.
+        features = extract_features(tmp_path, max_duration=30.0, target_sr=22050)
         emotion  = map_emotion(features.meta)
         mood     = compute_mood(features.meta)
         return {
@@ -171,8 +174,8 @@ async def similarity(file1: UploadFile = File(...), file2: UploadFile = File(...
             tmp.write(await f.read())
             paths.append(tmp.name)
     try:
-        f1 = extract_features(paths[0])
-        f2 = extract_features(paths[1])
+        f1 = extract_features(paths[0], max_duration=30.0, target_sr=22050)
+        f2 = extract_features(paths[1], max_duration=30.0, target_sr=22050)
         from src.auralis.audio.similarity import cosine_similarity
         sim = cosine_similarity(f1.vector, f2.vector)
         return {"similarity": round(sim, 4)}

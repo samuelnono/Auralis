@@ -2,14 +2,26 @@ import librosa
 import numpy as np
 
 
-def extract_mfcc(path: str, n_mfcc: int = 20) -> dict:
+def extract_mfcc(
+    path: str,
+    n_mfcc: int = 20,
+    max_duration: float | None = None,
+    target_sr: int | None = None,
+) -> dict:
     """
     Load an audio file and extract MFCC features plus supplementary
     acoustic descriptors for richer similarity comparison.
 
     Args:
-        path   : Path to audio file (.wav or .mp3)
-        n_mfcc : Number of MFCC coefficients (default raised to 20)
+        path         : Path to audio file (.wav or .mp3)
+        n_mfcc       : Number of MFCC coefficients (default raised to 20)
+        max_duration : If set, only load the first N seconds. Used by the
+                       live /analyze endpoint to keep memory bounded on
+                       small VMs; emotion is stable enough across a track
+                       that a 30s sample is representative.
+        target_sr    : If set, resample to this rate at load time. Defaults
+                       to None (native sample rate) to preserve the
+                       offline indexing pipeline's behaviour.
 
     Returns:
         dict with keys:
@@ -24,7 +36,7 @@ def extract_mfcc(path: str, n_mfcc: int = 20) -> dict:
           sr            – sample rate (int)
           duration_sec  – track duration in seconds (float)
     """
-    y, sr = librosa.load(path, sr=None)
+    y, sr = librosa.load(path, sr=target_sr, duration=max_duration, mono=True)
 
     # ── MFCCs (expanded to 20 coefficients) ─────────────────────────────────
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
