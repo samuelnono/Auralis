@@ -2,12 +2,64 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Primary -->
+    <title>Auralis — Emotion-Aware Music</title>
+    <meta
+      name="description"
+      content="Auralis is a frequency- and emotion-aware music analysis platform. Upload a track to extract its acoustic signature, see its mood, and get personalized recommendations explained by Claude."
+    />
+    <meta name="author" content="Samuel Nono" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://auralis-phi.vercel.app/" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#c8f135" />
+
+    <!-- Open Graph (LinkedIn, iMessage, Slack, Discord, Facebook) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Auralis" />
+    <meta property="og:title" content="Auralis — Emotion-Aware Music" />
+    <meta
+      property="og:description"
+      content="Upload a track. See its acoustic fingerprint and mood. Get recommendations Claude can explain."
+    />
+    <meta property="og:url" content="https://auralis-phi.vercel.app/" />
+    <meta property="og:image" content="https://auralis-phi.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Auralis — emotion-aware music platform" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Auralis — Emotion-Aware Music" />
+    <meta
+      name="twitter:description"
+      content="Upload a track. See its acoustic fingerprint and mood. Get recommendations Claude can explain."
+    />
+    <meta name="twitter:image" content="https://auralis-phi.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="Auralis — emotion-aware music platform" />
+
+    <!-- Crawlers -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- Performance: warm up font + API connections -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://auralis-audio-nono.fly.dev" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      Auralis needs JavaScript enabled to analyze audio. Please enable
+      JavaScript and reload this page.
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
