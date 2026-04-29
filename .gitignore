@@ -24,3 +24,8 @@ frontend/dist/
 
 # fly.io local state
 .fly/
+
+# submission artefacts (generated locally, never committed)
+Auralis_Submission.zip
+AuralisSubmission.zip
+Auralis_Project_Report.docx
