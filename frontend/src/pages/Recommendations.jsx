@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { API } from '../config'
+import SpotifyRail from '../components/SpotifyRail'
 
 const EMOTION_EMOJIS = { calm: '🌊', energetic: '⚡', happy: '☀️', sad: '🌧️', unknown: '🎵' }
 
@@ -11,6 +12,10 @@ export default function Recommendations({ profile }) {
   const [topK, setTopK] = useState(10)
   const [excludeRated, setExcludeRated] = useState(true)
   const [error, setError] = useState(null)
+  // Collapsed by default — these are research-index matches against the
+  // training dataset, useful for explaining the model but noisy as a primary
+  // recommendation surface for end users.
+  const [showResearchIndex, setShowResearchIndex] = useState(false)
 
   const fetchRecs = async () => {
     if (!profile?.has_signal) return
@@ -54,70 +59,105 @@ export default function Recommendations({ profile }) {
         </p>
       </div>
 
-      {/* Controls */}
-      <div className="card" style={{ marginBottom: 28 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          <div className="slider-row">
-            <div className="slider-label">
-              <span>Acoustic ↔ Emotion weight</span>
-              <span className="slider-value">{alpha.toFixed(2)}</span>
-            </div>
-            <input type="range" min={0} max={1} step={0.05} value={alpha}
-              onChange={e => setAlpha(parseFloat(e.target.value))} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
-              <span>Emotion only</span><span>Acoustic only</span>
-            </div>
-          </div>
+      {/* Live Spotify rail driven by the dominant emotion in the profile.
+          Sits above the local-index ranking so the listener gets fresh real
+          tracks first, then the model's ranked similarity matches below. */}
+      <SpotifyRail
+        discreteEmotion={profile.dominant_emotion}
+        title={`Spotify picks for your ${profile.dominant_emotion} taste`}
+        limit={6}
+      />
 
-          <div className="slider-row">
-            <div className="slider-label">
-              <span>Results</span>
-              <span className="slider-value">{topK}</span>
-            </div>
-            <input type="range" min={3} max={20} step={1} value={topK}
-              onChange={e => setTopK(parseInt(e.target.value))} />
-          </div>
-        </div>
+      {/* Research-index ranking, collapsed by default. This is the
+          model's similarity ranking against the training dataset
+          (Song_01..Song_N MFCC fingerprints) — useful for showing how the
+          AI pipeline works, less useful as a primary recommendation surface
+          since the dataset tracks aren't user-playable. */}
+      <div className="research-section">
+        <button
+          className="research-toggle"
+          onClick={() => setShowResearchIndex((s) => !s)}
+        >
+          <span className="research-toggle-icon">
+            {showResearchIndex ? '▾' : '▸'}
+          </span>
+          <span className="research-toggle-label">
+            {showResearchIndex ? 'Hide' : 'Show'} research-index matches
+          </span>
+          <span className="research-toggle-hint">
+            (model similarity against the training dataset)
+          </span>
+        </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-          <input type="checkbox" id="excludeRated" checked={excludeRated}
-            onChange={e => setExcludeRated(e.target.checked)}
-            style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} />
-          <label htmlFor="excludeRated" style={{ fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            Hide already-rated tracks
-          </label>
-        </div>
-      </div>
+        {showResearchIndex && (
+          <div className="research-body">
+            {/* Controls */}
+            <div className="card" style={{ marginBottom: 28 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                <div className="slider-row">
+                  <div className="slider-label">
+                    <span>Acoustic ↔ Emotion weight</span>
+                    <span className="slider-value">{alpha.toFixed(2)}</span>
+                  </div>
+                  <input type="range" min={0} max={1} step={0.05} value={alpha}
+                    onChange={e => setAlpha(parseFloat(e.target.value))} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
+                    <span>Emotion only</span><span>Acoustic only</span>
+                  </div>
+                </div>
 
-      {loading && <div className="loading"><div className="spinner" /> Finding matches...</div>}
-      {error && <div style={{ color: '#ff6b8a', fontSize: 13, marginBottom: 16 }}>{error}</div>}
+                <div className="slider-row">
+                  <div className="slider-label">
+                    <span>Results</span>
+                    <span className="slider-value">{topK}</span>
+                  </div>
+                  <input type="range" min={3} max={20} step={1} value={topK}
+                    onChange={e => setTopK(parseInt(e.target.value))} />
+                </div>
+              </div>
 
-      {recs.length === 0 && !loading && (
-        <div className="empty-state">
-          <div className="empty-state-icon">◎</div>
-          <div className="empty-state-title">No results</div>
-          <div className="empty-state-text">Try unchecking "Hide already-rated tracks" or rate more songs.</div>
-        </div>
-      )}
-
-      <div className="track-list">
-        {recs.map((rec, i) => (
-          <div key={rec.path} className="track-row">
-            <span className="track-number">{i + 1}</span>
-            <div className="track-info">
-              <div className="track-name">{rec.path.split(/[\\/]/).pop().replace(/\.[^.]+$/, '')}</div>
-              <div className="track-meta">
-                <span>Acoustic {(rec.mfcc_sim * 100).toFixed(0)}%</span>
-                <span>·</span>
-                <span>Emotion {(rec.emotion_sim * 100).toFixed(0)}%</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                <input type="checkbox" id="excludeRated" checked={excludeRated}
+                  onChange={e => setExcludeRated(e.target.checked)}
+                  style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                <label htmlFor="excludeRated" style={{ fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                  Hide already-rated tracks
+                </label>
               </div>
             </div>
-            <span className={`track-emotion-badge badge-${rec.emotion}`}>
-              {EMOTION_EMOJIS[rec.emotion]} {rec.emotion}
-            </span>
-            <span className="track-score">{rec.blended_score.toFixed(2)}</span>
+
+            {loading && <div className="loading"><div className="spinner" /> Finding matches...</div>}
+            {error && <div style={{ color: '#ff6b8a', fontSize: 13, marginBottom: 16 }}>{error}</div>}
+
+            {recs.length === 0 && !loading && (
+              <div className="empty-state">
+                <div className="empty-state-icon">◎</div>
+                <div className="empty-state-title">No results</div>
+                <div className="empty-state-text">Try unchecking "Hide already-rated tracks" or rate more songs.</div>
+              </div>
+            )}
+
+            <div className="track-list">
+              {recs.map((rec, i) => (
+                <div key={rec.path} className="track-row">
+                  <span className="track-number">{i + 1}</span>
+                  <div className="track-info">
+                    <div className="track-name">{rec.path.split(/[\\/]/).pop().replace(/\.[^.]+$/, '')}</div>
+                    <div className="track-meta">
+                      <span>Acoustic {(rec.mfcc_sim * 100).toFixed(0)}%</span>
+                      <span>·</span>
+                      <span>Emotion {(rec.emotion_sim * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  <span className={`track-emotion-badge badge-${rec.emotion}`}>
+                    {EMOTION_EMOJIS[rec.emotion]} {rec.emotion}
+                  </span>
+                  <span className="track-score">{rec.blended_score.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+        )}
       </div>
     </div>
   )

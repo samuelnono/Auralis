@@ -19,6 +19,9 @@ primary_region = "ord"    # Change to the Fly region nearest you (sjc, iad, lhr,
   # Public (non-secret) configuration. Secrets go in `flyctl secrets set`.
   CHAT_RATE_LIMIT = "10"
   CHAT_RATE_WINDOW_SEC = "3600"
+  # Spotify Client ID is public by design — safe to live in plaintext config.
+  # The matching SPOTIFY_CLIENT_SECRET is set via `fly secrets set`.
+  SPOTIFY_CLIENT_ID = "f70110980a5d4bfa8c04b4da79fb2d7c"
 
 [http_service]
   internal_port = 8000

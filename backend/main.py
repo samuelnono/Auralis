@@ -28,6 +28,7 @@ from src.auralis.preference.feedback import record_feedback, feedback_summary
 from src.auralis.preference.recommender import rank_songs, load_index
 from src.auralis.playlist.generator import generate_playlist, playlist_to_csv
 from src.auralis.chat.conversation import build_system_prompt, format_history_for_api
+from src.auralis.spotify import SpotifyClient, SpotifyError, mood_to_query
 
 app = FastAPI(title="Auralis API")
 
@@ -109,6 +110,12 @@ class ChatRequest(BaseModel):
     messages: list
     last_track_meta: Optional[dict] = None
 
+class SpotifyMoodRequest(BaseModel):
+    valence: Optional[float] = None
+    arousal: Optional[float] = None
+    discrete_emotion: Optional[str] = None
+    limit: int = 10
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -120,6 +127,18 @@ def get_index():
         return load_index(INDEX_PATH)
     except FileNotFoundError:
         return []
+
+
+# Lazy singleton so we only attempt the Client Credentials flow once we
+# actually have to. Lets the rest of the API boot even if Spotify creds
+# are missing (e.g. in a CI environment).
+_spotify_client: Optional[SpotifyClient] = None
+
+def get_spotify_client() -> SpotifyClient:
+    global _spotify_client
+    if _spotify_client is None:
+        _spotify_client = SpotifyClient()
+    return _spotify_client
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -399,3 +418,63 @@ Future versions will incorporate:
 """
 
     return {"response": fallback_response.strip()}
+
+
+@app.post("/spotify/search-by-mood")
+def spotify_search_by_mood(req: SpotifyMoodRequest):
+    """Surface real Spotify tracks for a (valence, arousal) mood point.
+
+    The frontend passes the same coordinates the circumplex UI uses, so the
+    same tap that shows the user where they are emotionally also fills the
+    recommendation rail with live Spotify results.
+
+    To stop the same six tracks from repeating for the same mood, we pick a
+    random query phrasing from the quadrant's pool *and* paginate past the
+    top relevance hits with a random offset. End result: every analyse-then-
+    recommend round trip returns a different lineup from the same mood point.
+    """
+
+    import random
+
+    mq = mood_to_query(
+        valence=req.valence,
+        arousal=req.arousal,
+        discrete_emotion=req.discrete_emotion,
+    )
+
+    chosen_query  = mq.pick()
+    # Offsets in 25-row buckets up to 200 keep the results inside Spotify's
+    # most relevant pages while still giving meaningful variety per call.
+    chosen_offset = random.choice([0, 25, 50, 75, 100, 150, 200])
+
+    try:
+        client = get_spotify_client()
+        tracks = client.search_tracks(
+            query=chosen_query,
+            limit=req.limit,
+            offset=chosen_offset,
+        )
+    except SpotifyError as exc:
+        # 503 lets the frontend fall back to local recommendations cleanly.
+        raise HTTPException(status_code=503, detail=str(exc))
+
+    return {
+        "query":     chosen_query,
+        "offset":    chosen_offset,
+        "quadrant":  mq.quadrant,
+        "rationale": mq.rationale,
+        "tracks":    [t.as_dict() for t in tracks],
+    }
+
+
+@app.get("/spotify/health")
+def spotify_health():
+    """Quick liveness check the frontend can poll before showing Spotify UI."""
+    client = get_spotify_client()
+    if not client._is_configured():
+        return {"status": "unconfigured"}
+    try:
+        client._get_token()
+        return {"status": "ok"}
+    except SpotifyError as exc:
+        return {"status": "error", "detail": str(exc)}

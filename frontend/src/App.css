@@ -886,6 +886,240 @@ select:focus { border-color: var(--accent); }
   font-style: italic;
 }
 
+/* ── SPOTIFY RAIL ── */
+.spotify-rail {
+  margin: 24px 0 32px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.spotify-rail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  gap: 12px;
+}
+
+.spotify-rail-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.spotify-rail-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.spotify-rail-badge {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1ed760;
+  border: 1px solid rgba(30, 215, 96, 0.4);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.spotify-rail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.spotify-rail-error {
+  font-size: 12px;
+  color: #ff8a8a;
+  padding: 12px;
+  background: rgba(255, 138, 138, 0.06);
+  border: 1px dashed rgba(255, 138, 138, 0.3);
+  border-radius: 8px;
+}
+
+.spotify-rail-empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 16px 0;
+  text-align: center;
+  font-style: italic;
+}
+
+.spotify-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.spotify-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-light);
+}
+
+.spotify-card-art {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.spotify-card-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.spotify-card-art-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 36px;
+  color: var(--text-muted);
+}
+
+.spotify-preview-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1ed760;
+  color: #0a0a0a;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.spotify-preview-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.spotify-preview-btn.playing {
+  background: var(--accent);
+}
+
+.spotify-preview-btn-disabled {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  border: 1px solid var(--border-light);
+}
+
+.spotify-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.spotify-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotify-card-artists {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotify-card-link {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--accent);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.spotify-card-link:hover {
+  text-decoration: underline;
+}
+
+/* ── RESEARCH-INDEX TOGGLE ── */
+.research-section {
+  margin-top: 8px;
+}
+
+.research-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-light);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.research-toggle:hover {
+  border-color: var(--accent-glow);
+  color: var(--text-primary);
+}
+
+.research-toggle-icon {
+  color: var(--accent);
+  font-size: 14px;
+  width: 14px;
+  text-align: center;
+}
+
+.research-toggle-label {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.research-toggle-hint {
+  margin-left: auto;
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.research-body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

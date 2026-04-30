@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import axios from 'axios'
 import { API } from '../config'
+import SpotifyRail from '../components/SpotifyRail'
 
 const EMOTION_EMOJIS = { calm: '🌊', energetic: '⚡', happy: '☀️', sad: '🌧️' }
 
@@ -315,7 +316,24 @@ export default function Analyze({ onFeedback }) {
       {loading && <div className="loading"><div className="spinner" /> Extracting features...</div>}
 
       {result1 && <TrackResult result={result1} onFeedback={onFeedback} fileNum={1} />}
+      {result1 && (
+        <SpotifyRail
+          valence={result1.mood?.valence}
+          arousal={result1.mood?.arousal}
+          discreteEmotion={result1.emotion}
+          title={`Spotify picks for File 1 (${result1.emotion})`}
+        />
+      )}
+
       {result2 && <TrackResult result={result2} onFeedback={onFeedback} fileNum={2} />}
+      {result2 && (
+        <SpotifyRail
+          valence={result2.mood?.valence}
+          arousal={result2.mood?.arousal}
+          discreteEmotion={result2.emotion}
+          title={`Spotify picks for File 2 (${result2.emotion})`}
+        />
+      )}
 
       {similarity !== null && (
         <div className="similarity-display">
