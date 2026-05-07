@@ -54,6 +54,7 @@ class UserProfile:
         label: str,       # "like" | "dislike"
         track_path: str,
         emotion_label: str,
+        display_name: str | None = None,
     ) -> None:
         """
         Update the preference profile given user feedback on one track.
@@ -109,6 +110,9 @@ class UserProfile:
         self.interaction_log.append(
             {
                 "track": track_path,
+                # Falls back to track_path stem on the UI side if missing,
+                # so existing logs from before this change still render.
+                "display_name": display_name,
                 "feedback": label,
                 "emotion_label": emotion_label,
                 "emotion_scores": {k: round(v, 4) for k, v in emotion_scores.items()},

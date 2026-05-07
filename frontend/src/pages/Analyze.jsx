@@ -128,6 +128,7 @@ function TrackResult({ result, onFeedback, fileNum }) {
       emotion_label: result.emotion,
       emotion_scores: result.scores,
       vector: result.vector,
+      display_name: result.display_name,
     })
     setRated(label)
     onFeedback()
@@ -223,7 +224,10 @@ export default function Analyze({ onFeedback }) {
     const form = new FormData()
     form.append('file', file)
     const res = await axios.post(`${API}/analyze`, form)
-    return res.data
+    // Tack the original filename onto the result so downstream rate calls
+    // can preserve a human-readable name in the interaction log instead of
+    // the opaque tmp-upload path.
+    return { ...res.data, display_name: file.name }
   }
 
   const handleAnalyze = async () => {

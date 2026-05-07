@@ -44,51 +44,59 @@ class MoodQuery:
 
 # Russell's circumplex split into four quadrants.
 # valence > 0 = positive affect, arousal > 0 = activated.
+#
+# Query phrasing intentionally biases toward *vocal* tracks (singer-songwriter,
+# pop, indie, hip-hop, R&B, etc.) rather than instrumental / lo-fi / ambient
+# / "easy listening" pools. Spotify's search is keyword-matched, and queries
+# like "lo-fi" or "ambient" pull a lot of background-music instrumentals
+# that read as filler in a chat recommendation. Listeners who explicitly
+# want instrumentals can ask for them — the LLM is instructed to default
+# to lyric-bearing picks otherwise.
 _QUADRANT_QUERIES = {
     "HVHA": MoodQuery(
         queries=[
-            "happy upbeat feel good",
-            "joyful celebration dance",
-            "uplifting summer vibes",
-            "feel good groove",
-            "energetic positive pop",
-            "bright cheerful sunshine",
+            "upbeat pop vocal",
+            "energetic hip hop anthem",
+            "feel good rnb",
+            "sing-along dance pop",
+            "uplifting indie pop",
+            "celebration anthem vocal",
         ],
         quadrant="HVHA",
         rationale="High valence, high arousal. Lifted and energised.",
     ),
     "LVHA": MoodQuery(
         queries=[
-            "intense aggressive driving",
-            "tense edgy raw",
-            "dark heavy rock",
-            "anxious restless",
-            "fierce powerful",
-            "stormy brooding",
+            "intense rap vocal",
+            "edgy alternative rock vocal",
+            "raw introspective hip hop",
+            "fierce singer-songwriter",
+            "powerful indie rock vocal",
+            "brooding alt-pop",
         ],
         quadrant="LVHA",
         rationale="Low valence, high arousal. Tense and forceful.",
     ),
     "LVLA": MoodQuery(
         queries=[
-            "sad melancholy slow",
-            "lonely heartbreak ballad",
-            "rainy day mellow",
-            "wistful introspective",
-            "blues somber",
-            "late night quiet",
+            "sad indie singer-songwriter",
+            "heartbreak ballad vocal",
+            "introspective rnb",
+            "wistful indie folk",
+            "melancholic alt-pop vocal",
+            "late night reflective vocals",
         ],
         quadrant="LVLA",
         rationale="Low valence, low arousal. Heavy and reflective.",
     ),
     "HVLA": MoodQuery(
         queries=[
-            "chill calm warm acoustic",
-            "cozy soft folk",
-            "lo-fi gentle relaxing",
-            "afternoon serene",
-            "peaceful ambient",
-            "easy listening soothing",
+            "warm acoustic singer-songwriter",
+            "mellow indie pop vocal",
+            "chill rnb vocal",
+            "cozy folk-pop",
+            "soft alt-pop vocal",
+            "laid back vocal indie",
         ],
         quadrant="HVLA",
         rationale="High valence, low arousal. Soft and content.",
