@@ -210,7 +210,7 @@ The 46-dimensional feature vector normalizes scalar features (tempo, RMS, spectr
 
 ## Origin
 
-Auralis began as a CADSCOM (Computational Audio and Data Science Conference on Music) submission exploring whether interpretable acoustic feature engineering could compete with black-box collaborative filtering on emotion-aware recommendation tasks. The current version extends that research foundation into a deployed, conversational, full-stack product.
+Auralis began as a CADSCOM (Colloquium on Analytics, Data Science, and Computing) submission exploring whether interpretable acoustic feature engineering could compete with black-box collaborative filtering on emotion-aware recommendation tasks. The current version extends that research foundation into a deployed, conversational, full-stack product.
 
 ---
 
